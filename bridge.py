@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 from enum import Enum
-import librosa
+# import librosa
 
 
 @dataclass
@@ -26,7 +26,9 @@ class BridgeConfig:
     SIP_TRANSPORT_PORT: int = 5060
     
     # WebSocket Configuration
-    WS_URI: str = "ws://34.47.250.27:8081"
+    WS_URI: str = "ws://13.233.41.221:8081" # AWS
+    # WS_URI: str = "ws://34.47.250.27:8081" # GCP
+    # WS_URI: str = "ws://localhost:8081" # Local testing
     WS_RECONNECT_DELAY: int = 5
     WS_PING_INTERVAL: int = 30
     WS_PING_TIMEOUT: int = 10
