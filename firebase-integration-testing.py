@@ -30,7 +30,7 @@ from firebase_admin import credentials, firestore
 class Config:
     WS_HOST = "0.0.0.0"
     WS_PORT = 8081
-    PROJECT_ID = "docbooking-9ec13" # Your Google Cloud Project ID
+    PROJECT_ID = "maya-zappq-f40be" # Your Google Cloud Project ID
     LOCATION = "us-central1"
     MODEL = "gemini-2.0-flash-live-preview-04-09"
     INPUT_SAMPLE_RATE = 16000
