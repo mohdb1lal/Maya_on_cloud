@@ -329,7 +329,8 @@ class FreeSwitchWebSocketHandler:
         self.echo_blocking_active = False
         self.consecutive_silence_chunks = 0
         self.audio_energy_baseline = []
-        # In class FreeSwitchWebSocketHandler:
+    
+    # In class FreeSwitchWebSocketHandler:
         # NEW: Add this entire method to handle the tool call
         async def _find_hospitals(self, args):
             locality = args.get("locality")
@@ -692,6 +693,7 @@ IMPORTANT BEHAVIORAL GUIDELINES:
 - Add small personal touches and warmth to your responses
 - Never mention you're an AI or assistant - you're Maya, the receptionist
 - Sound genuinely helpful and caring, not robotic or overly formal
+- When a user asks about finding hospitals, clinics, or their locations, you MUST use the `find_hospitals` tool to check the database.**
 
 YOUR ROLE:
 - Greet every patient when the connect
@@ -915,7 +917,7 @@ Remember: You're not an AI, you're Maya - a caring, multilingual hospital recept
             elif function_name == "transfer_call":
                 result = await self._transfer_call(args)
             elif function_name == "find_hospitals":
-                result = await self._find_hospi tals(args)
+                result = await self._find_hospitals(args)
             else:
                 result = {"error": f"Unknown function: {function_name}"}
             
