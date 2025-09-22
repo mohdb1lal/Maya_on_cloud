@@ -20,6 +20,9 @@ from google.genai.types import (
 )
 from scipy import signal
 import struct
+# NEW: Firebase Admin Imports
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 # --- Configuration ---
 @dataclass
@@ -54,6 +57,17 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger('FreeSwitchWebSocket')
+
+# NEW: Firebase Initialization
+try:
+    # NOTE: This uses the service account key from your environment variable
+    cred = credentials.ApplicationDefault()
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    logger.info("✅ Firebase connection successful.")
+except Exception as e:
+    logger.error(f"❌ Firebase initialization failed: {e}")
+    db = None
 
 # --- Audio Processing Utilities ---
 class AudioProcessor:
@@ -315,6 +329,35 @@ class FreeSwitchWebSocketHandler:
         self.echo_blocking_active = False
         self.consecutive_silence_chunks = 0
         self.audio_energy_baseline = []
+        # In class FreeSwitchWebSocketHandler:
+        # NEW: Add this entire method to handle the tool call
+        async def _find_hospitals(self, args):
+            locality = args.get("locality")
+            logger.info(f"Searching for hospitals in: {locality}")
+
+            if not db:
+                return {"error": "Database connection is not available."}
+
+            try:
+                hospitals_ref = db.collection('hospitals').where('locality', '==', locality).stream()
+
+                found_hospitals = []
+                for hospital in hospitals_ref:
+                    hospital_data = hospital.to_dict()
+                    found_hospitals.append({
+                        "name": hospital_data.get("name"),
+                        "address": hospital_data.get("address"),
+                        "specialties": hospital_data.get("specialties", [])
+                    })
+
+                if not found_hospitals:
+                    return {"message": f"I couldn't find any hospitals in {locality}."}
+
+                return {"hospitals_found": found_hospitals}
+
+            except Exception as e:
+                logger.error(f"Error querying hospitals from Firestore: {e}")
+                return {"error": "An error occurred while searching for hospitals."}
 
     async def handle_freeswitch_connection(self, websocket, path):
         logger.info(f"FreeSwitch connection from {websocket.remote_address}")
@@ -727,6 +770,18 @@ Remember: You're not an AI, you're Maya - a caring, multilingual hospital recept
                         },
                         "required": ["department"]
                     }
+                ),
+                # NEW: Add this function declaration for finding hospitals
+                FunctionDeclaration(
+                    name="find_hospitals",
+                    description="Finds available hospitals in a specific locality or area.",
+                    parameters={
+                        "type": "object",
+                        "properties": {
+                            "locality": {"type": "string", "description": "The neighborhood, area, or city to search for hospitals in. For example, 'Kochi' or 'Panampilly Nagar'."}
+                        },
+                        "required": ["locality"]
+                    }
                 )
             ]
         )
@@ -859,6 +914,8 @@ Remember: You're not an AI, you're Maya - a caring, multilingual hospital recept
                 result = await self._check_availability(args)
             elif function_name == "transfer_call":
                 result = await self._transfer_call(args)
+            elif function_name == "find_hospitals":
+                result = await self._find_hospi tals(args)
             else:
                 result = {"error": f"Unknown function: {function_name}"}
             
