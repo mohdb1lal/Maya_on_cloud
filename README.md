@@ -27,6 +27,10 @@ python3 /Users/admin/Work/ZappQ/Gcloud-migration/bridge.py
  ssh -i "maya.pem" ubuntu@13.233.41.221
 ```
 
+```venv
+. websocket-agent/venv/bin/activate
+```
+
 #### Shahid directory
 ```
  cd /home/apple/shahid && . voxbay/bin/activate
