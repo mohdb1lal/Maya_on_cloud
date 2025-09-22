@@ -9,8 +9,8 @@ import numpy as np
 from datetime import datetime
 
 # Test Configuration
-TEST_SERVER = "ws://localhost:8081"
-# TEST_SERVER = "ws://13.233.41.221:8081"
+# TEST_SERVER = "ws://localhost:8081"
+TEST_SERVER = "ws://13.233.41.221:8081"
 SAMPLE_RATE = 24000
 INPUT_SAMPLE_RATE = 16000  # Microphone sample rate
 CHUNK_SIZE = 640
