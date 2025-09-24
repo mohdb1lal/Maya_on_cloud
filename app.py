@@ -58,10 +58,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger('FreeSwitchWebSocket')
 
-# NEW: Firebase Initialization
+# MODIFIED: Firebase Initialization
 try:
-    # NOTE: This uses the service account key from your environment variable
-    cred = credentials.ApplicationDefault()
+    # This now directly uses the service account key file from your project directory.
+    # Make sure 'serviceAccountKey.json' is in the same folder as this script.
+    cred = credentials.Certificate('/Users/admin/Work/ZappQ/Maya_on_cloud/serviceAccountKey(maya-zappq).json')
     firebase_admin.initialize_app(cred)
     db = firestore.client()
     logger.info("✅ Firebase connection successful.")
