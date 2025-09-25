@@ -19,8 +19,8 @@ from enum import Enum
 class BridgeConfig:
     """Configuration for the SIP-WebSocket bridge"""
     # SIP Configuration
-    SIP_USER: str = "7Xb501gw"
-    SIP_PASSWORD: str = "c@n5C4Ub8bNTfhQ"
+    SIP_USER: str = "RhAEOUJ7"
+    SIP_PASSWORD: str = "Quadvare123#"
     SIP_DOMAIN: str = "pbx.voxbaysolutions.com"
     SIP_PORT: int = 5260
     SIP_TRANSPORT_PORT: int = 5060
