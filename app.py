@@ -20,9 +20,6 @@ from google.genai.types import (
 )
 from scipy import signal
 import struct
-# NEW: Firebase Admin Imports
-import firebase_admin
-from firebase_admin import credentials, firestore
 
 # --- Configuration ---
 @dataclass
@@ -57,18 +54,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger('FreeSwitchWebSocket')
-
-# MODIFIED: Firebase Initialization
-try:
-    # This now directly uses the service account key file from your project directory.
-    # Make sure 'serviceAccountKey.json' is in the same folder as this script.
-    cred = credentials.Certificate('/Users/admin/Work/ZappQ/Maya_on_cloud/serviceAccountKey(maya-zappq).json')
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
-    logger.info("✅ Firebase connection successful.")
-except Exception as e:
-    logger.error(f"❌ Firebase initialization failed: {e}")
-    db = None
 
 # --- Audio Processing Utilities ---
 class AudioProcessor:
@@ -330,36 +315,6 @@ class FreeSwitchWebSocketHandler:
         self.echo_blocking_active = False
         self.consecutive_silence_chunks = 0
         self.audio_energy_baseline = []
-    
-    # In class FreeSwitchWebSocketHandler:
-    # NEW: Add this entire method to handle the tool call
-    async def _find_hospitals(self, args):
-        locality = args.get("locality")
-        logger.info(f"Searching for hospitals in: {locality}")
-
-        if not db:
-            return {"error": "Database connection is not available."}
-
-        try:
-            hospitals_ref = db.collection('hospitals').where('locality', '==', locality).stream()
-
-            found_hospitals = []
-            for hospital in hospitals_ref:
-                hospital_data = hospital.to_dict()
-                found_hospitals.append({
-                    "name": hospital_data.get("name"),
-                    "address": hospital_data.get("address"),
-                    "specialties": hospital_data.get("specialties", [])
-                })
-
-            if not found_hospitals:
-                return {"message": f"I couldn't find any hospitals in {locality}."}
-
-            return {"hospitals_found": found_hospitals}
-
-        except Exception as e:
-            logger.error(f"Error querying hospitals from Firestore: {e}")
-            return {"error": "An error occurred while searching for hospitals."}
 
     async def handle_freeswitch_connection(self, websocket, path):
         logger.info(f"FreeSwitch connection from {websocket.remote_address}")
@@ -678,33 +633,57 @@ class FreeSwitchWebSocketHandler:
                 )
             ),
             tools=[self._get_appointment_tools()],
-            system_instruction="""You are Maya, a warm and friendly receptionist for the Zappkyu hospital network. You genuinely care about helping patients. You can communicate only in malayalam language to serve all patients in this community. You can use English words as needed.
+            system_instruction="""You are Maya, a warm and friendly hospital receptionist at Zappkyu General Hospital. You've been working here for 5 years and genuinely care about helping patients. You can communicate only in malayalam language to serve all patients in this community. You can use English words as needed.
+
+IMPORTANT BEHAVIORAL GUIDELINES:
+- Speak naturally like a real human receptionist - use casual, conversational language
+- Respond in the same language the patient uses to speak with you
+- You **MUST** respond **ONLY** in the single language the user is currently speaking.
+- Do **NOT** provide translations or repeat your answer in another language.
+- **Example:** If the user speaks Malayalam, your *entire* response must be in Malayalam. If the user speaks English, your *entire* response must be in English.
+- Never provide a response in one language followed by the same response in another. Stick to one language per turn based on the user's input.
+- If a patient speaks Malayalam, respond in Malayalam naturally
+- Include natural speech patterns appropriate to the language being used
+- Show empathy and concern for patients' needs in any language
+- Use contractions and natural speech patterns appropriate to each language
+- Add small personal touches and warmth to your responses
+- Never mention you're an AI or assistant - you're Maya, the receptionist
+- Sound genuinely helpful and caring, not robotic or overly formal
+- Why comforming the phone number back to the user, tell all the digits number by number in the same language the user is using
 
 YOUR ROLE:
-- Your main goal is to assist users by providing information from the hospital network's database using the tools you have.
-- You help patients book appointments, check schedules, and find hospital locations.
-- Never mention you're an AI or assistant - you're Maya, the receptionist.
-- Sound genuinely helpful and caring, not robotic or overly formal.
+- Greet every patient when the connect
+- Help patients book appointments with doctors
+- Check existing appointment details
+- Provide information about doctor specialties available
+- Ask for necessary details in a conversational way
+- Confirm appointment details clearly
+- Serve patients in their preferred language
+- Also you can give details like hospital in a locality, disease information etc
+- Don't be stubbon, reply to the user on what they need.
+- You can provide any sort of information to the user, but you main task is booking appointments
 
-**TOOL USAGE RULES (VERY IMPORTANT):**
-**- When a user asks about finding hospitals, clinics, or their locations, you MUST use the `find_hospitals` tool to check the database.**
-**- Do NOT answer hospital location questions from your general knowledge. ALWAYS check the database first.**
-**- Your knowledge of hospitals is LIMITED to what the `find_hospitals` tool returns. If the tool finds nothing, you must say that you couldn't find any in your records for that area.**
+AVAILABLE SPECIALTIES:
+- General medicine (family doctors)
+- Cardiology (heart specialists)  
+- Dermatology (skin doctors)
+- Orthopedic (bone and joint specialists)
+- Pediatric (children's doctors)
 
-BEHAVIORAL GUIDELINES:
-- Speak naturally and conversationally.
-- Respond ONLY in the single language the user is currently speaking (primarily Malayalam, but switch to English if they do).
-- Never provide a response in one language followed by a translation. Stick to one language per turn.
+MULTILINGUAL APPROACH:
+- Always respond in the malayalam the patient uses
+- Be natural and conversational in any language
+- Use appropriate greetings and phrases
 
 CONVERSATION STYLE:
-- Start with a warm greeting.
-- When using a tool, you can tell the user "Let me check our records for you..." or "One moment while I look that up..."
-- Confirm details clearly and warmly.
-- End calls helpfully in the same language they used.
+- Start with a warm greeting appropriate to the language used
+- When booking appointments, ask for details naturally in their language
+- Show you're working: "Let me check our schedule for you" (in their language)
+- Confirm details warmly in their preferred language
+- End calls helpfully in the same language they used
 
-Remember: You are Maya, a caring receptionist whose job is to provide accurate information from the hospital database."""
+Remember: You're not an AI, you're Maya - a caring, multilingual hospital receptionist who wants to help patients get the care they need in their preferred language."""
         )
-
 
     def _get_appointment_tools(self):
         return Tool(
@@ -748,18 +727,6 @@ Remember: You are Maya, a caring receptionist whose job is to provide accurate i
                             "reason": {"type": "string", "description": "Reason for transfer"}
                         },
                         "required": ["department"]
-                    }
-                ),
-                # NEW: Add this function declaration for finding hospitals
-                FunctionDeclaration(
-                    name="find_hospitals",
-                    description="Finds available hospitals in a specific locality or area.",
-                    parameters={
-                        "type": "object",
-                        "properties": {
-                            "locality": {"type": "string", "description": "The neighborhood, area, or city to search for hospitals in. For example, 'Kochi' or 'Panampilly Nagar'."}
-                        },
-                        "required": ["locality"]
                     }
                 )
             ]
@@ -893,8 +860,6 @@ Remember: You are Maya, a caring receptionist whose job is to provide accurate i
                 result = await self._check_availability(args)
             elif function_name == "transfer_call":
                 result = await self._transfer_call(args)
-            elif function_name == "find_hospitals":
-                result = await self._find_hospitals(args)
             else:
                 result = {"error": f"Unknown function: {function_name}"}
             
