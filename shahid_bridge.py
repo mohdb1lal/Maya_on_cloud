@@ -19,15 +19,15 @@ from enum import Enum
 class BridgeConfig:
     """Configuration for the SIP-WebSocket bridge"""
     # SIP Configuration
-    SIP_USER: str = "ZuzncDvc"
-    SIP_PASSWORD: str = "Admin@123"
+    SIP_USER: str = "RhAEOUJ7"
+    SIP_PASSWORD: str = "Quadvare123#"
     SIP_DOMAIN: str = "pbx.voxbaysolutions.com"
     SIP_PORT: int = 5260
     SIP_TRANSPORT_PORT: int = 5060
     
     # WebSocket Configuration
-    WS_URI: str = "ws://13.233.41.221:8081" # AWS
-    # WS_URI: str = "ws://34.47.250.27:8081" # GCP
+    # WS_URI: str = "ws://13.233.41.221:8081" # AWS
+    WS_URI: str = "ws://34.93.85.137:8081" # GCP
     # WS_URI: str = "ws://localhost:8081" # Local testing
     WS_RECONNECT_DELAY: int = 5
     WS_PING_INTERVAL: int = 30
