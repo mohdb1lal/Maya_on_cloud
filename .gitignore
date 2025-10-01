@@ -4,4 +4,5 @@ maya.pem
 firebase-data-fetching/serviceAccountKey.json
 freeswitch_websocket_agent.log
 sip_bridge.log
+# macOS specific files
 .DS_Store
