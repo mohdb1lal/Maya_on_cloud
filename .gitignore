@@ -1,3 +1,8 @@
 serviceAccountKey.json
 serviceAccountKey(maya-zappq).json
 maya.pem
+firebase-data-fetching/serviceAccountKey.json
+
+.DS_Store
+freeswitch_websocket_agent.log
+sip_bridge.log
