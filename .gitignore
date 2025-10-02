@@ -6,3 +6,5 @@ freeswitch_websocket_agent.log
 sip_bridge.log
 # macOS specific files
 .DS_Store
+firebase_data_fetching/__pycache__
+__pycache__
