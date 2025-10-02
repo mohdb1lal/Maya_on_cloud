@@ -21,6 +21,7 @@ from google.genai.types import (
 from scipy import signal
 from datetime import datetime
 import pytz  # Add this for timezone support
+from firebase_data_fetching.doctors import fetch_doctor_availability
 
 # --- Configuration ---
 @dataclass
@@ -56,21 +57,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger('FreeSwitchWebSocket')
 
-# --- Doctor Availability Data ---
-# This dictionary now controls which doctors are available for appointments.
-# True = Available, False = Unavailable.
-DOCTOR_AVAILABILITY = {
-    "Dr. Rajesh Kumar": True,    # Available
-    "Dr. Priya Sharma": False,   # Unavailable
-    "Dr. Arjun Nair": True,     # Available
-    "Dr. Meera Pillai": True,     # Available
-    "Dr. Anand Krishnan": False,  # Unavailable
-    "Dr. Sushma Menon": True,     # Available
-    "Dr. Deepak Varma": True,     # Available
-    "Dr. Kavitha Reddy": False,   # Unavailable
-    "Dr. Sunil Thomas": True,     # Available
-    "Dr. Lakshmi Devi": True      # Available
-}
+
+######################################################################
+# --- Hospital and Doctor Availability Setup ---
+# Define the name of the hospital this instance of MAYA is for.
+HOSPITAL_NAME = "Zappa Hospital"
+
+# Fetch doctor availability from Firestore at startup.
+logger.info(f"Fetching doctor availability for '{HOSPITAL_NAME}'...")
+DOCTOR_AVAILABILITY = fetch_doctor_availability(HOSPITAL_NAME)
+
+if not DOCTOR_AVAILABILITY:
+    logger.error(
+        f"Could not fetch doctor availability for '{HOSPITAL_NAME}'. "
+        "Appointment availability checks may not work correctly. "
+        "Please verify Firebase connection, 'serviceAccountKey.json' path, and hospital name in the database."
+    )
+    # Initialize as empty to prevent crashes, but functionality will be limited.
+    DOCTOR_AVAILABILITY = {}
+else:
+    logger.info(f"Successfully fetched availability for {len(DOCTOR_AVAILABILITY)} doctors.")
+    logger.info(f"Available Doctors: {[name for name, available in DOCTOR_AVAILABILITY.items() if available]}")
+######################################################################
 
 
 # --- Audio Processing Utilities ---
