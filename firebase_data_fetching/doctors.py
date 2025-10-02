@@ -2,25 +2,13 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 def fetch_doctor_availability(hospital_name):
-    """
-    Fetches doctor names and their availability from a Firestore database
-    for a specific hospital from the 'clinics' collection.
-
-    Args:
-        hospital_name (str): The exact name of the hospital to query.
-
-    Returns:
-        dict: A dictionary with doctor names as keys and their availability
-              (boolean) as values. Returns an empty dict if hospital or
-              doctors are not found.
-    """
     # Initialize the dictionary to store results
     doctor_availability_dict = {}
 
     try:
         # 1. Initialize Firebase Admin SDK
         # The script will look for 'serviceAccountKey.json' in the same folder.
-        cred = credentials.Certificate("firebase-data-fetching/serviceAccountKey.json")
+        cred = credentials.Certificate("firebase_data_fetching/serviceAccountKey.json")
         
         # Avoid re-initializing the app if the script is run multiple times
         if not firebase_admin._apps:
