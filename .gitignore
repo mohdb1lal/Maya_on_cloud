@@ -1,7 +1,8 @@
 serviceAccountKey.json
 serviceAccountKey(maya-zappq).json
 maya.pem
-firebase-data-fetching/serviceAccountKey.json
+firebase_data_fetching/docbooking.json
+firebase_data_fetching/maya_zappq.json
 freeswitch_websocket_agent.log
 sip_bridge.log
 # macOS specific files
