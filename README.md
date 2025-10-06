@@ -40,3 +40,6 @@ python3 /Users/admin/Work/ZappQ/Gcloud-migration/bridge.py
 ```
 cd /home/admin && . venv/bin/activate
 ```
+
+### Details of files:
+firebase_data_fetching/doctors.py - access demo database in 'maya' firebase
