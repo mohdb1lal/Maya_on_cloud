@@ -8,7 +8,7 @@ def fetch_doctor_availability(hospital_name):
     try:
         # 1. Initialize Firebase Admin SDK
         # The script will look for 'serviceAccountKey.json' in the same folder.
-        cred = credentials.Certificate("firebase_data_fetching/serviceAccountKey.json")
+        cred = credentials.Certificate("firebase_data_fetching/maya_zappq.json")
         
         # Avoid re-initializing the app if the script is run multiple times
         if not firebase_admin._apps:
