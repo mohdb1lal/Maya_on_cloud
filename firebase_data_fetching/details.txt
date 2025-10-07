@@ -1,0 +1,131 @@
+Successfully connected to Firestore.
+
+======================================================================
+FETCHING CLINIC AND DOCTOR DATA
+======================================================================
+
+--- METHOD 1: Individual Functions ---
+
+Clinic Name: Jaza Healthcare
+Clinic ID: QV070
+
+--- Getting Doctors List ---
+Found 7 doctors in clinic 'QV070'
+
+Doctors List:
+  • Dr.Samuel Koshy (Pediatrics)
+  • Dr. Rajeev T (ENT)
+  • Dr. Bindu (Pediatrics)
+  • Dr. Muhammed Muneef (Pulmonolgy)
+  • Dr.Ashish Nair (Psychiatry)
+  • Dr. Febina (Dermatology)
+  • Dr. Abdulla MN (Orthopedics)
+
+--- Getting Doctor Details ---
+
+Dr.Samuel Koshy - Pediatrics
+----------------------------------------------------------------------
+Consultation fees for 'Dr.Samuel Koshy': ₹250
+  Consultation Fees: ₹250
+Found availability schedule for 'Dr.Samuel Koshy'
+  Availability Schedule:
+    • Monday: 6:00 PM - 6:30 PM (1 slots)
+    • Tuesday: 6:00 PM - 6:30 PM (1 slots)
+    • Wednesday: 6:00 PM - 6:30 PM (1 slots)
+    • Thursday: 6:00 PM - 6:30 PM (1 slots)
+    • Friday: 6:00 PM - 6:30 PM (1 slots)
+    • Saturday: 6:00 PM - 6:30 PM (1 slots)
+    • Sunday: Not Available
+
+Dr. Rajeev T - ENT
+----------------------------------------------------------------------
+Consultation fees for 'Dr. Rajeev T': ₹250
+  Consultation Fees: ₹250
+Found availability schedule for 'Dr. Rajeev T'
+  Availability Schedule:
+    • Monday: 4:00 PM - 5:00 PM (1 slots), 8:30 AM - 9:00 AM (1 slots)
+    • Tuesday: 4:00 PM - 5:00 PM (1 slots), 8:30 AM - 9:00 AM (1 slots)
+    • Wednesday: 4:00 PM - 5:00 PM (1 slots), 8:30 AM - 9:00 AM (1 slots)
+    • Thursday: 4:00 PM - 5:00 PM (1 slots), 8:30 AM - 9:00 AM (1 slots)
+    • Friday: 4:00 PM - 5:00 PM (1 slots), 8:30 AM - 9:00 AM (1 slots)
+    • Saturday: 8:30 AM - 9:00 AM (1 slots), 4:00 PM - 5:00 PM (1 slots)
+    • Sunday: Not Available
+
+Dr. Bindu - Pediatrics
+----------------------------------------------------------------------
+Consultation fees for 'Dr. Bindu': ₹250
+  Consultation Fees: ₹250
+Found availability schedule for 'Dr. Bindu'
+  Availability Schedule:
+    • Monday: 4:00 PM - 5:30 PM (1 slots)
+    • Tuesday: 4:00 PM - 5:30 PM (1 slots)
+    • Wednesday: 4:00 PM - 5:30 PM (1 slots)
+    • Thursday: 4:00 PM - 5:30 PM (1 slots)
+    • Friday: 4:00 PM - 5:30 PM (1 slots)
+    • Saturday: 4:00 PM - 5:30 PM (1 slots)
+    • Sunday: Not Available
+
+Dr. Muhammed Muneef - Pulmonolgy
+----------------------------------------------------------------------
+Consultation fees for 'Dr. Muhammed Muneef': ₹300
+  Consultation Fees: ₹300
+Found availability schedule for 'Dr. Muhammed Muneef'
+  Availability Schedule:
+    • Monday: 5:30 PM - 8:00 PM (1 slots), 9:00 AM - 10:00 AM (1 slots)
+    • Tuesday: 5:30 PM - 8:00 PM (1 slots), 9:00 AM - 10:00 AM (1 slots)
+    • Wednesday: 5:30 PM - 8:00 PM (1 slots), 9:00 AM - 10:00 AM (1 slots)
+    • Thursday: 5:30 PM - 8:00 PM (1 slots), 9:00 AM - 10:00 AM (1 slots)
+    • Friday: 5:30 PM - 8:00 PM (1 slots), 9:00 AM - 10:00 AM (1 slots)
+    • Saturday: 5:30 PM - 8:00 PM (1 slots), 9:00 AM - 10:00 AM (1 slots)
+    • Sunday: Not Available
+
+Dr.Ashish Nair - Psychiatry
+----------------------------------------------------------------------
+Consultation fees for 'Dr.Ashish Nair': ₹350
+  Consultation Fees: ₹350
+Found availability schedule for 'Dr.Ashish Nair'
+  Availability Schedule:
+    • Monday: 5:30 PM - 6:30 PM (1 slots)
+    • Tuesday: 5:30 PM - 6:30 PM (1 slots)
+    • Wednesday: 5:30 PM - 6:30 PM (1 slots)
+    • Thursday: 5:30 PM - 6:30 PM (1 slots)
+    • Friday: 5:30 PM - 6:30 PM (1 slots)
+    • Saturday: 5:30 PM - 6:30 PM (1 slots)
+    • Sunday: Not Available
+
+Dr. Febina - Dermatology
+----------------------------------------------------------------------
+Consultation fees for 'Dr. Febina': ₹250
+  Consultation Fees: ₹250
+Found availability schedule for 'Dr. Febina'
+  Availability Schedule:
+    • Monday: 8:30 AM - 9:00 AM (1 slots)
+    • Tuesday: Not Available
+    • Wednesday: 8:30 AM - 9:00 AM (1 slots)
+    • Thursday: Not Available
+    • Friday: 4:30 PM - 5:30 PM (1 slots)
+    • Saturday: 4:30 PM - 5:30 PM (1 slots)
+    • Sunday: Not Available
+
+Dr. Abdulla MN - Orthopedics
+----------------------------------------------------------------------
+Consultation fees for 'Dr. Abdulla MN': ₹250
+  Consultation Fees: ₹250
+Found availability schedule for 'Dr. Abdulla MN'
+  Availability Schedule:
+    • Monday: 4:30 PM - 8:30 PM (1 slots), 6:30 AM - 7:30 AM (1 slots)
+    • Tuesday: 4:30 PM - 8:30 PM (1 slots), 6:30 AM - 7:30 AM (1 slots)
+    • Wednesday: 4:30 PM - 8:30 PM (1 slots), 6:30 AM - 7:30 AM (1 slots)
+    • Thursday: 4:30 PM - 8:30 PM (1 slots), 6:30 AM - 7:30 AM (1 slots)
+    • Friday: 4:30 PM - 8:30 PM (1 slots), 6:30 AM - 7:30 AM (1 slots)
+    • Saturday: 4:30 PM - 8:30 PM (1 slots), 6:30 AM - 7:30 AM (1 slots)
+    • Sunday: Not Available
+
+
+======================================================================
+--- ADDING NEW BOOKING ---
+======================================================================
+
+======================================================================
+DATA FETCHING AND BOOKING COMPLETE
+======================================================================
