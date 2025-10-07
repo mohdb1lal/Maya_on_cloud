@@ -21,7 +21,7 @@ from google.genai.types import (
 from scipy import signal
 from datetime import datetime
 import pytz  # Add this for timezone support
-from firebase_data_fetching.doctors import fetch_doctor_availability
+from firebase_data_fetching.doctors import fetch_all_doctor_details 
 
 # --- Configuration ---
 @dataclass
@@ -59,25 +59,33 @@ logger = logging.getLogger('FreeSwitchWebSocket')
 
 
 ######################################################################
-# --- Hospital and Doctor Availability Setup ---
-# Define the name of the hospital this instance of MAYA is for.
-HOSPITAL_NAME = "Zappa Hospital"
+# --- MODIFIED: Hospital and Doctor Availability Setup ---
+# Define the ID of the clinic this instance of MAYA is for.
+# This ID MUST EXACTLY MATCH the document ID in your 'clinics' collection in Firestore.
+CLINIC_ID = "QV070" # <-- IMPORTANT: This is now the primary identifier.
 
-# Fetch doctor availability from Firestore at startup.
-logger.info(f"Fetching doctor availability for '{HOSPITAL_NAME}'...")
-DOCTOR_AVAILABILITY = fetch_doctor_availability(HOSPITAL_NAME)
+# Fetch detailed clinic and doctor information from Firestore at startup.
+logger.info(f"Fetching clinic and doctor details for Clinic ID '{CLINIC_ID}'...")
+clinic_data = fetch_all_doctor_details(CLINIC_ID)
 
-if not DOCTOR_AVAILABILITY:
+# Store the fetched data in global variables for the AI to use.
+CLINIC_NAME = clinic_data.get("clinic_name", "the hospital")
+DOCTOR_DETAILS = clinic_data.get("doctors", {})
+
+if not DOCTOR_DETAILS:
     logger.error(
-        f"Could not fetch doctor availability for '{HOSPITAL_NAME}'. "
-        "Appointment availability checks may not work correctly. "
-        "Please verify Firebase connection, 'serviceAccountKey.json' path, and hospital name in the database."
+        f"Could not fetch doctor details for Clinic ID '{CLINIC_ID}'. "
+        "The agent will have limited knowledge. "
+        "Please verify Firestore connection, 'docbooking.json' path, and clinic ID."
     )
-    # Initialize as empty to prevent crashes, but functionality will be limited.
-    DOCTOR_AVAILABILITY = {}
 else:
-    logger.info(f"Successfully fetched availability for {len(DOCTOR_AVAILABILITY)} doctors.")
-    logger.info(f"Available Doctors: {[name for name, available in DOCTOR_AVAILABILITY.items() if available]}")
+    logger.info(f"Successfully configured for '{CLINIC_NAME}' with {len(DOCTOR_DETAILS)} doctors.")
+    # Log the names of doctors available today
+    available_today = [name for name, details in DOCTOR_DETAILS.items() if details.get("is_available_today")]
+    if available_today:
+        logger.info(f"Doctors available today: {', '.join(available_today)}")
+    else:
+        logger.info("No doctors are scheduled for today.")
 ######################################################################
 
 
@@ -664,8 +672,9 @@ class FreeSwitchWebSocketHandler:
 
     def _get_gemini_config(self):
         current_dt = self._get_current_datetime()
-        available_doctors_list = [name for name, available in DOCTOR_AVAILABILITY.items() if available]
-        
+        # FIXED: Use the correct DOCTOR_DETAILS dictionary to get the list of available doctors.
+        available_doctors_list = [name for name, details in DOCTOR_DETAILS.items() if details.get("is_available_today")]
+
         return LiveConnectConfig(
             response_modalities=["AUDIO"],
             speech_config=SpeechConfig(
@@ -675,7 +684,7 @@ class FreeSwitchWebSocketHandler:
             ),
             tools=[self._get_appointment_tools()],
             system_instruction=f""" LANGUAGE = COLLOQUIAL MALAYALAM.
-You are MAYA, a friendly and professional ai assistant for zappque medical hospital in KERALA(So always talk in malayalam but you can use ), specializing in appointment scheduling.
+You are MAYA, a friendly and professional ai assistant for {CLINIC_NAME} in KERALA(So always talk in malayalam but you can use ), specializing in appointment scheduling.
 Your task is to assist callers in booking, rescheduling, or canceling medical appointments.
 You knows the current date and time is {current_dt['formatted']}. so don't ask for it. If the caller asks for the date or time, provide it based on this information. 
 Don't spell RECEPTIONIST. As it is a position, YOU are the RECEPTIONIST MAYA. 
@@ -692,7 +701,7 @@ IMPORTANT BEHAVIORAL GUIDELINES:
 - If the user is directly asking to book apointment, then don't say the greetings and all, just go diretly into bookings.
 - When a user requests an appointment with a specific doctor (e.g., "Dr. Priya Sharma"), you MUST use the `check_availability` function with the doctor's name to verify their availability first.
 - Based on the function's result, if the doctor is available, proceed with booking. If the doctor is NOT available, you MUST inform the caller immediately and politely ask if they would like to book with another available doctor. Do NOT say 'let me check' and then wait. Check first, then respond with the result.
-- The list of currently available doctors is: {', '.join(available_doctors_list)}.
+- The list of currently available doctors is: {', '.join(available_doctors_list) if available_doctors_list else 'none'}.
 - Show empathy and concern for patients' needs
 - Use contractions and natural speech patterns appropriate in MALAYALAM
 - Add small personal touches and warmth to your responses
@@ -960,19 +969,22 @@ CONVERSATION STYLE:
 
         # Check for specific doctor availability first
         if doctor_name:
-            # Normalize name for safer matching (e.g., remove titles, extra spaces)
+            # Normalize name for safer matching
             normalized_doctor_name = doctor_name.strip()
-            is_available = DOCTOR_AVAILABILITY.get(normalized_doctor_name)
+            
+            # FIXED: Use the correct DOCTOR_DETAILS dictionary for lookups.
+            doctor_info = DOCTOR_DETAILS.get(normalized_doctor_name)
 
-            if is_available is None:
-                logger.warning(f"Doctor '{normalized_doctor_name}' not found in availability list.")
+            if doctor_info is None:
+                logger.warning(f"Doctor '{normalized_doctor_name}' not found in DOCTOR_DETAILS.")
                 return {
                     "status": "doctor_not_found",
                     "message": f"I'm sorry, I couldn't find a doctor named {normalized_doctor_name} in our system."
                 }
             
-            if not is_available:
-                logger.info(f"Doctor '{normalized_doctor_name}' is marked as unavailable.")
+            # Check the pre-calculated 'is_available_today' flag.
+            if not doctor_info.get("is_available_today"):
+                logger.info(f"Doctor '{normalized_doctor_name}' is marked as unavailable today.")
                 return {
                     "status": "doctor_unavailable",
                     "date": args.get('date'),
@@ -984,6 +996,7 @@ CONVERSATION STYLE:
         # If we are here, either no doctor was specified or the specified doctor is available
         logger.info(f"Doctor '{doctor_name}' is available, or no specific doctor requested. Checking general slots.")
         
+        # This part can be enhanced to pull real slots from DOCTOR_DETAILS
         available_slots = [
             "09:00", "09:30", "10:00", "10:30", "11:00",
             "14:00", "14:30", "15:00", "15:30", "16:00"
@@ -996,6 +1009,7 @@ CONVERSATION STYLE:
             "service": args.get('service', 'general'),
             "next_available": available_slots[0] if available_slots else None
         }
+
 
     async def _transfer_call(self, args):
         department = args.get('department')
