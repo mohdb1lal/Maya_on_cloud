@@ -74,8 +74,9 @@ ALL_DOCTORS = []
 CLINIC_NAME = "the hospital" # Default name
 
 try:
-    # Call the function from doctors.py and unpack the returned tuple
+    # Call the function from doctors.py and unpack the new 5-item tuple
     (
+        clinic_name_fetched,
         depts_fetched,
         fees_fetched,
         avail_fetched,
@@ -84,13 +85,14 @@ try:
 
     # If data was fetched successfully, assign it to our global variables
     if docs_fetched:
+        # Assign the fetched clinic name. Fall back to default if it's empty.
+        CLINIC_NAME = clinic_name_fetched or "the hospital"
         DEPARTMENT_WISE_DOCTORS = depts_fetched
         DOCTOR_CONSULTATION_FEE = fees_fetched
         DOCTOR_AVAILABILITY = avail_fetched
         ALL_DOCTORS = docs_fetched
-        # You can get the clinic name from another source or hardcode it if needed
-        # For now, we'll just log the success.
-        logger.info(f"Successfully configured for Clinic ID '{CLINIC_ID}' with {len(ALL_DOCTORS)} doctors.")
+        
+        logger.info(f"Successfully configured for '{CLINIC_NAME}' (ID: {CLINIC_ID}) with {len(ALL_DOCTORS)} doctors.")
     else:
         # This will be triggered if fetch_clinic_data returns None
         raise ValueError("fetch_clinic_data did not return any doctor data.")

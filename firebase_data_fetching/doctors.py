@@ -98,8 +98,9 @@ def fetch_clinic_data(clinic_id):
 
     print(f"\nSuccessfully processed details for {len(all_doctors)} doctors.")
     
-    # 3. Return the four populated data structures
-    return department_wise_doctors, doctor_consultation_fee, doctor_availability, all_doctors
+
+    # 3. Return the clinic name and the four populated data structures
+    return clinic_name, department_wise_doctors, doctor_consultation_fee, doctor_availability, all_doctors
 
 # --- Main Execution Block (for testing purposes) ---
 if __name__ == "__main__":
