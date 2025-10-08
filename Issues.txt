@@ -7,3 +7,8 @@ don't assume any random number, be very causious about it.
 
 TO BE DONE
 - Vertex ai agent builder
+
+Wednesday(08-10-25)
+- time relativity ->  today, tomorrow
+- Don't mention todays data without user request
+- digit pronunction is in english(supposed to be in malayalam)
