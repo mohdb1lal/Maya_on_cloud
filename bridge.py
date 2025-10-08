@@ -729,18 +729,19 @@ class AICall(pj.Call):
     async def _run_ai_client(self, call_id: str, caller_id: str):
         """Run the AI client with audio bridging"""
         try:
-            # Wait for audio bridge to be ready
-            max_wait = 10  # seconds
-            wait_count = 0
+            # Wait for audio bridge to be ready with a shorter timeout
+            max_wait_ms = 2000  # 2 seconds total
+            wait_interval_ms = 100
+            total_waited_ms = 0
             while not self.audio_bridge or not self.audio_bridge.active:
-                if wait_count >= max_wait:
-                    logger.error("❌ Audio bridge not ready after 10 seconds")
+                if total_waited_ms >= max_wait_ms:
+                    logger.error(f"❌ Audio bridge not ready after {max_wait_ms / 1000} seconds")
                     return
-                logger.info(f"⏳ Waiting for audio bridge... ({wait_count + 1}/{max_wait})")
-                await asyncio.sleep(1)
-                wait_count += 1
-            
+                await asyncio.sleep(wait_interval_ms / 1000.0) # sleep for 100ms
+                total_waited_ms += wait_interval_ms
+
             logger.info("✅ Audio bridge is ready")
+            
             
             # Create AI client
             self.ai_client = AIWebSocketClient(self.config)
