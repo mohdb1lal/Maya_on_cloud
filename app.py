@@ -21,7 +21,7 @@ from google.genai.types import (
 from scipy import signal
 from datetime import datetime
 import pytz  # Add this for timezone support
-from firebase_data_fetching.doctors import fetch_all_doctor_details 
+from firebase_data_fetching.doctors import fetch_clinic_data
 
 # --- Configuration ---
 @dataclass
@@ -59,33 +59,47 @@ logger = logging.getLogger('FreeSwitchWebSocket')
 
 
 ######################################################################
-# --- MODIFIED: Hospital and Doctor Availability Setup ---
+# --- NEW: Hospital and Doctor Data Loading ---
+
 # Define the ID of the clinic this instance of MAYA is for.
-# This ID MUST EXACTLY MATCH the document ID in your 'clinics' collection in Firestore.
-CLINIC_ID = "QV070" # <-- IMPORTANT: This is now the primary identifier.
+CLINIC_ID = "QV070" 
 
-# Fetch detailed clinic and doctor information from Firestore at startup.
 logger.info(f"Fetching clinic and doctor details for Clinic ID '{CLINIC_ID}'...")
-clinic_data = fetch_all_doctor_details(CLINIC_ID)
 
-# Store the fetched data in global variables for the AI to use.
-CLINIC_NAME = clinic_data.get("clinic_name", "the hospital")
-DOCTOR_DETAILS = clinic_data.get("doctors", {})
+# Initialize the four data structures that will hold our clinic's information.
+DEPARTMENT_WISE_DOCTORS = {}
+DOCTOR_CONSULTATION_FEE = {}
+DOCTOR_AVAILABILITY = {}
+ALL_DOCTORS = []
+CLINIC_NAME = "the hospital" # Default name
 
-if not DOCTOR_DETAILS:
+try:
+    # Call the function from doctors.py and unpack the returned tuple
+    (
+        depts_fetched,
+        fees_fetched,
+        avail_fetched,
+        docs_fetched
+    ) = fetch_clinic_data(CLINIC_ID)
+
+    # If data was fetched successfully, assign it to our global variables
+    if docs_fetched:
+        DEPARTMENT_WISE_DOCTORS = depts_fetched
+        DOCTOR_CONSULTATION_FEE = fees_fetched
+        DOCTOR_AVAILABILITY = avail_fetched
+        ALL_DOCTORS = docs_fetched
+        # You can get the clinic name from another source or hardcode it if needed
+        # For now, we'll just log the success.
+        logger.info(f"Successfully configured for Clinic ID '{CLINIC_ID}' with {len(ALL_DOCTORS)} doctors.")
+    else:
+        # This will be triggered if fetch_clinic_data returns None
+        raise ValueError("fetch_clinic_data did not return any doctor data.")
+
+except Exception as e:
     logger.error(
         f"Could not fetch doctor details for Clinic ID '{CLINIC_ID}'. "
-        "The agent will have limited knowledge. "
-        "Please verify Firestore connection, 'docbooking.json' path, and clinic ID."
+        f"The agent will have limited knowledge. Error: {e}"
     )
-else:
-    logger.info(f"Successfully configured for '{CLINIC_NAME}' with {len(DOCTOR_DETAILS)} doctors.")
-    # Log the names of doctors available today
-    available_today = [name for name, details in DOCTOR_DETAILS.items() if details.get("is_available_today")]
-    if available_today:
-        logger.info(f"Doctors available today: {', '.join(available_today)}")
-    else:
-        logger.info("No doctors are scheduled for today.")
 ######################################################################
 
 
@@ -672,8 +686,12 @@ class FreeSwitchWebSocketHandler:
 
     def _get_gemini_config(self):
         current_dt = self._get_current_datetime()
-        # FIXED: Use the correct DOCTOR_DETAILS dictionary to get the list of available doctors.
-        available_doctors_list = [name for name, details in DOCTOR_DETAILS.items() if details.get("is_available_today")]
+        
+        # Create clean, readable string versions of your data for the prompt
+        all_doctors_str = ", ".join(ALL_DOCTORS) if ALL_DOCTORS else "none"
+        departments_str = json.dumps(DEPARTMENT_WISE_DOCTORS, indent=2)
+        fees_str = json.dumps(DOCTOR_CONSULTATION_FEE, indent=2)
+        availability_str = json.dumps(DOCTOR_AVAILABILITY, indent=2)
 
         return LiveConnectConfig(
             response_modalities=["AUDIO"],
@@ -701,13 +719,35 @@ IMPORTANT BEHAVIORAL GUIDELINES:
 - If the user is directly asking to book apointment, then don't say the greetings and all, just go diretly into bookings.
 - When a user requests an appointment with a specific doctor (e.g., "Dr. Priya Sharma"), you MUST use the `check_availability` function with the doctor's name to verify their availability first.
 - Based on the function's result, if the doctor is available, proceed with booking. If the doctor is NOT available, you MUST inform the caller immediately and politely ask if they would like to book with another available doctor. Do NOT say 'let me check' and then wait. Check first, then respond with the result.
-- The list of currently available doctors is: {', '.join(available_doctors_list) if available_doctors_list else 'none'}.
 - Show empathy and concern for patients' needs
 - Use contractions and natural speech patterns appropriate in MALAYALAM
 - Add small personal touches and warmth to your responses
 - Never mention you're an AI or assistant - you're Maya, the receptionist
 - Sound genuinely helpful and caring, not robotic or overly formal
 - Whenever repeating or confirming a phone number, ALWAYS say it digit by digit (for example: 9–8–7–6–5–4–3–2–1–0). NEVER group numbers into thousands, lakhs, crores, or treat them like money or quantities. Phone numbers are NOT amounts of money — they must be spoken ONLY as individual digits, one by one. Don't repeat the dictation unless the user asks for it. 
+
+1.  **List of All Doctors:**
+    {all_doctors_str}
+
+2.  **Doctors Grouped by Department:**
+    ```json
+    {departments_str}
+    ```
+
+3.  **Consultation Fee for Each Doctor:**
+    ```json
+    {fees_str}
+    ```
+
+4.  **Doctor Availability (Their working days):**
+    ```json
+    {availability_str}
+    ```
+
+**HOW TO ANSWER QUESTIONS:**
+- When asked "Who are the skin doctors?", look at the "Doctors Grouped by Department" data for "Dermatology" and list the doctors.
+- When asked "What is Dr. Samuel Koshy's fee?", find his name in the "Consultation Fee" data.
+- When asked "When is Dr. Moideen Babu available?", find his name in the "Doctor Availability" data and state his working days.
 
 Phone Number confirmation guidelines:
 - While confirming phone number, the digit 0 should be spelled as 'Zero' not 'Ooo' okay. 
@@ -964,51 +1004,30 @@ CONVERSATION STYLE:
         }
 
     async def _check_availability(self, args):
-        logger.info(f"Checking availability: {args}")
+        date_str = args.get('date')
         doctor_name = args.get('doctor_name')
-
-        # Check for specific doctor availability first
-        if doctor_name:
-            # Normalize name for safer matching
-            normalized_doctor_name = doctor_name.strip()
-            
-            # FIXED: Use the correct DOCTOR_DETAILS dictionary for lookups.
-            doctor_info = DOCTOR_DETAILS.get(normalized_doctor_name)
-
-            if doctor_info is None:
-                logger.warning(f"Doctor '{normalized_doctor_name}' not found in DOCTOR_DETAILS.")
-                return {
-                    "status": "doctor_not_found",
-                    "message": f"I'm sorry, I couldn't find a doctor named {normalized_doctor_name} in our system."
-                }
-            
-            # Check the pre-calculated 'is_available_today' flag.
-            if not doctor_info.get("is_available_today"):
-                logger.info(f"Doctor '{normalized_doctor_name}' is marked as unavailable today.")
-                return {
-                    "status": "doctor_unavailable",
-                    "date": args.get('date'),
-                    "doctor_name": normalized_doctor_name,
-                    "available_slots": [],
-                    "message": f"Dr. {normalized_doctor_name} is not available today."
-                }
-
-        # If we are here, either no doctor was specified or the specified doctor is available
-        logger.info(f"Doctor '{doctor_name}' is available, or no specific doctor requested. Checking general slots.")
+        logger.info(f"Checking availability for Dr. {doctor_name} on {date_str}")
         
-        # This part can be enhanced to pull real slots from DOCTOR_DETAILS
-        available_slots = [
-            "09:00", "09:30", "10:00", "10:30", "11:00",
-            "14:00", "14:30", "15:00", "15:30", "16:00"
-        ]
-        
-        return {
-            "status": "slots_available",
-            "date": args.get('date'),
-            "available_slots": available_slots,
-            "service": args.get('service', 'general'),
-            "next_available": available_slots[0] if available_slots else None
-        }
+        try:
+            # Figure out the day of the week (e.g., "Monday") from the date
+            target_day = datetime.fromisoformat(date_str).strftime('%A')
+            
+            # Look up the doctor's schedule in our global dictionary
+            doctor_schedule = DOCTOR_AVAILABILITY.get(doctor_name)
+
+            if doctor_schedule is None:
+                return {"status": "doctor_not_found", "message": f"Sorry, I could not find Dr. {doctor_name} in our records."}
+            
+            # Check if the day the user asked for is in the doctor's list of working days
+            if target_day in doctor_schedule:
+                return {"status": "available", "message": f"Yes, Dr. {doctor_name} is scheduled to work on that day."}
+            else:
+                available_days = ', '.join(doctor_schedule)
+                return {"status": "unavailable", "message": f"Dr. {doctor_name} is not available on {target_day}s. They only work on: {available_days}."}
+
+        except Exception as e:
+            logger.error(f"Error in _check_availability: {e}")
+            return {"status": "error", "message": "I had trouble checking the schedule. Please try again."}
 
 
     async def _transfer_call(self, args):

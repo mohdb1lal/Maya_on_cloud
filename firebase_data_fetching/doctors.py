@@ -1,136 +1,131 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import datetime
 import json
 
-# --- Helper Functions (No changes needed here) ---
-
-def _format_time_from_float(time_float):
-    """Converts a time float (e.g., 18.5) to a 24-hour string format (e.g., "18:30")."""
-    if time_float is None:
-        return "00:00"
-    try:
-        hours = int(time_float)
-        minutes = int((time_float - hours) * 60)
-        return f"{hours:02d}:{minutes:02d}"
-    except (ValueError, TypeError):
-        return "00:00"
-
-def _format_availability_schedule(consultation_times):
+def fetch_clinic_data(clinic_id):
     """
-    Formats the raw consultationTimes map from Firestore into a structured dictionary.
-    """
-    schedule = {}
-    days_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-
-    if not consultation_times:
-        return {day: [] for day in days_order}
-
-    for day in days_order:
-        day_schedule = consultation_times.get(day)
-        schedule[day] = []
-        
-        if day_schedule and isinstance(day_schedule, dict):
-            for session_data in day_schedule.values():
-                if session_data and isinstance(session_data, dict):
-                    schedule[day].append({
-                        "from": _format_time_from_float(session_data.get('from')),
-                        "to": _format_time_from_float(session_data.get('to')),
-                        "slots": session_data.get('tokenLimit', 0)
-                    })
-    
-    return schedule
-
-# --- MODIFIED Main Data Fetching Function ---
-
-def fetch_all_doctor_details(clinic_id):
-    """
-    Fetches the clinic name and complete details for all its doctors using the clinic ID.
+    Fetches comprehensive data for a given clinic ID and organizes it into
+    four distinct dictionaries.
 
     Args:
         clinic_id (str): The document ID of the clinic (e.g., 'QV070').
 
     Returns:
-        dict: A dictionary containing the clinic_name and a nested 'doctors' dictionary.
-              e.g., {"clinic_name": "Jaza Healthcare", "doctors": {...}}
+        tuple: A tuple containing four data structures:
+               - department_wise_doctors (dict): Doctors grouped by department.
+               - doctor_consultation_fee (dict): Fees for each doctor.
+               - doctor_availability (dict): Available days for each doctor.
+               - all_doctors (list): A list of all doctor names.
+        Returns (None, None, None, None) on failure.
     """
-    doctor_details_dict = {}
-    clinic_name = "the hospital"
+    # 1. Initialize the four required data structures
+    department_wise_doctors = {}
+    doctor_consultation_fee = {}
+    doctor_availability = {}
+    all_doctors = []
 
     try:
-        # 1. Initialize Firebase with the correct credentials file
+        # Initialize Firebase Admin SDK
+        # Ensure the path to your service account key is correct
         cred = credentials.Certificate("firebase_data_fetching/docbooking.json")
-        
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred)
-
+        
         db = firestore.client()
         print("Successfully connected to Firestore.")
         print(f"Fetching details for clinic ID: '{clinic_id}'...")
 
-        # 2. Directly get the clinic document by its ID
+        # Get the main clinic document
         clinic_ref = db.collection('clinics').document(clinic_id)
         clinic_doc = clinic_ref.get()
 
         if not clinic_doc.exists:
             print(f"Error: No clinic found with ID '{clinic_id}'.")
-            return {}
+            return None, None, None, None
 
-        # 3. Fetch the clinic's name from the document's 'name' field
-        clinic_data = clinic_doc.to_dict()
-        clinic_name = clinic_data.get('name', clinic_name)
+        clinic_name = clinic_doc.to_dict().get('name', 'the hospital')
         print(f"Found clinic: '{clinic_name}'. Fetching doctor details...")
-        
-        # 4. Access the 'doctors' subcollection
+
+        # Access the 'doctors' subcollection and stream the documents
         doctors_ref = clinic_doc.reference.collection('doctors')
         doctor_docs = doctors_ref.stream()
 
-        # 5. Iterate through each doctor and build the detailed dictionary
-        today_str = datetime.now().strftime('%A')
-
+        # Iterate through each doctor document to populate the dictionaries
         for doc in doctor_docs:
             doctor_data = doc.to_dict()
             doctor_name = doctor_data.get('name')
-
+            
+            # Skip if the doctor has no name
             if not doctor_name:
                 continue
 
-            availability_schedule = _format_availability_schedule(doctor_data.get('consultationTimes'))
-            is_available_today = bool(availability_schedule.get(today_str))
+            specialization = doctor_data.get('specialization', 'General')
+            consultation_fees = doctor_data.get('consultationFees', 'N/A')
+            consultation_times = doctor_data.get('consultationTimes')
 
-            doctor_details_dict[doctor_name] = {
-                "specialization": doctor_data.get('specialization', 'N/A'),
-                "consultation_fee": doctor_data.get('consultationFees', 0),
-                "is_available_today": is_available_today,
-                "availability": availability_schedule
-            }
-        
-        if not doctor_details_dict:
+            # 2. Populate the four data structures
+
+            # a) Add doctor name to the `all_doctors` list
+            all_doctors.append(doctor_name)
+
+            # b) Add doctor's fee to the `doctor_consultation_fee` dictionary
+            doctor_consultation_fee[doctor_name] = consultation_fees
+
+            # c) Group doctors by department in `department_wise_doctors`
+            if specialization not in department_wise_doctors:
+                department_wise_doctors[specialization] = []
+            department_wise_doctors[specialization].append(doctor_name)
+
+            # d) Determine available days for `doctor_availability`
+            available_days = []
+            if consultation_times and isinstance(consultation_times, dict):
+                # A day is considered available if its schedule is not null/None
+                for day, schedule in consultation_times.items():
+                    if schedule is not None:
+                        available_days.append(day)
+            doctor_availability[doctor_name] = available_days
+
+        if not all_doctors:
             print("Clinic found, but no doctors were located in its subcollection.")
 
     except FileNotFoundError:
         print("Error: 'firebase_data_fetching/docbooking.json' not found.")
-        return {}
+        print("Please ensure the service account key file is in the correct path.")
+        return None, None, None, None
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return {}
-    
-    print(f"Successfully fetched details for {len(doctor_details_dict)} doctors.")
-    # 6. Return the structured dictionary with clinic name and doctor details
-    return {
-        "clinic_name": clinic_name,
-        "doctors": doctor_details_dict
-    }
+        return None, None, None, None
 
-# --- MODIFIED Main Execution (for testing) ---
+    print(f"\nSuccessfully processed details for {len(all_doctors)} doctors.")
+    
+    # 3. Return the four populated data structures
+    return department_wise_doctors, doctor_consultation_fee, doctor_availability, all_doctors
+
+# --- Main Execution Block (for testing purposes) ---
 if __name__ == "__main__":
-    # Use the Clinic ID directly for fetching
+    # Set the target Clinic ID here
     TARGET_CLINIC_ID = "QV070" 
     
-    clinic_data = fetch_all_doctor_details(TARGET_CLINIC_ID)
+    # Call the function and unpack the returned tuple of data structures
+    departments, fees, availability, doctors = fetch_clinic_data(TARGET_CLINIC_ID)
+    # print('\n','\n',departments,'\n','\n',fees,'\n','\n', availability,'\n','\n',doctors,'\n','\n')
+    # Print each data structure for verification
+    if doctors:  # Check if any data was fetched successfully
+        print("\n" + "="*50)
+        print("--- 1. All Doctors (List) ---")
+        print(json.dumps(doctors, indent=2))
+        
+        print("\n" + "="*50)
+        print("--- 2. Department-wise Doctors (Dictionary) ---")
+        print(json.dumps(departments, indent=2))
 
-    print("\n--- Final Fetched Data Structure ---")
-    if clinic_data:
-        print(json.dumps(clinic_data, indent=2))
+        print("\n" + "="*50)
+        print("--- 3. Doctor Consultation Fees (Dictionary) ---")
+        print(json.dumps(fees, indent=2))
+
+        print("\n" + "="*50)
+        print("--- 4. Doctor Availability by Day (Dictionary) ---")
+        print(json.dumps(availability, indent=2))
+        print("\n" + "="*50)
     else:
-        print("No data was fetched.")
+        print("\nNo data was fetched. Please check the Clinic ID and Firebase connection.")
