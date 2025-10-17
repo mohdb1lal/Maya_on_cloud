@@ -747,6 +747,7 @@ IMPORTANT BEHAVIORAL GUIDELINES:
     ```
 
 Phone Number confirmation guidelines:
+- make sure there are 10 digits in the phone number
 - While confirming phone number, the digit 0 should be spelled as 'Zero' not 'Ooo' okay. 
 - Be very attendive when noting the phone number, don't make any mistake and also without the user dictating you the phone number, 
 - don't assume any random number, be very causious about it. 
@@ -867,6 +868,7 @@ CONVERSATION STYLE:
                                 for part in client_content.user_turn.parts:
                                     if hasattr(part, 'text') and part.text:
                                         logger.info(f"🎤 USER SAID: {part.text}")
+                                        print(f"USER'S TRANSCRIBED TEXT: {part.text}")
                     
                     logger.warning("Gemini response stream closed. Re-establishing...")
                     await asyncio.sleep(0.5)
