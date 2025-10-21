@@ -1,4 +1,3 @@
-
 import pjsua2 as pj
 import asyncio
 import websockets
@@ -15,6 +14,7 @@ from enum import Enum
 # import librosa
 
 
+
 @dataclass
 class BridgeConfig:
     """Configuration for the SIP-WebSocket bridge"""
@@ -27,8 +27,8 @@ class BridgeConfig:
     
     # WebSocket Configuration
     # WS_URI: str = "ws://13.233.41.221:8081" # AWS
-    # WS_URI: str = "ws://34.93.85.137:8081" # GCP
-    WS_URI: str = "ws://localhost:8081" # Local testing
+    WS_URI: str = "ws://34.47.250.27:8081" # GCP
+    # WS_URI: str = "ws://localhost:8081" # Local testing
     WS_RECONNECT_DELAY: int = 5
     WS_PING_INTERVAL: int = 30
     WS_PING_TIMEOUT: int = 10
@@ -729,19 +729,18 @@ class AICall(pj.Call):
     async def _run_ai_client(self, call_id: str, caller_id: str):
         """Run the AI client with audio bridging"""
         try:
-            # Wait for audio bridge to be ready with a shorter timeout
-            max_wait_ms = 2000  # 2 seconds total
-            wait_interval_ms = 100
-            total_waited_ms = 0
+            # Wait for audio bridge to be ready
+            max_wait = 10  # seconds
+            wait_count = 0
             while not self.audio_bridge or not self.audio_bridge.active:
-                if total_waited_ms >= max_wait_ms:
-                    logger.error(f"❌ Audio bridge not ready after {max_wait_ms / 1000} seconds")
+                if wait_count >= max_wait:
+                    logger.error("❌ Audio bridge not ready after 10 seconds")
                     return
-                await asyncio.sleep(wait_interval_ms / 1000.0) # sleep for 100ms
-                total_waited_ms += wait_interval_ms
-
-            logger.info("✅ Audio bridge is ready")
+                logger.info(f"⏳ Waiting for audio bridge... ({wait_count + 1}/{max_wait})")
+                await asyncio.sleep(1)
+                wait_count += 1
             
+            logger.info("✅ Audio bridge is ready")
             
             # Create AI client
             self.ai_client = AIWebSocketClient(self.config)
