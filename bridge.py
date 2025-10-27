@@ -27,8 +27,8 @@ class BridgeConfig:
     
     # WebSocket Configuration
     # WS_URI: str = "ws://13.233.41.221:8081" # AWS
-    WS_URI: str = "ws://34.47.250.27:8081" # GCP
-    # WS_URI: str = "ws://localhost:8081" # Local testing
+    # WS_URI: str = "ws://34.93.85.137:8081" # GCP
+    WS_URI: str = "ws://localhost:8081" # Local testing
     WS_RECONNECT_DELAY: int = 5
     WS_PING_INTERVAL: int = 30
     WS_PING_TIMEOUT: int = 10
@@ -75,21 +75,26 @@ class AudioResampler:
             if len(audio_data) == 0:
                 return b''
             
-            audio_array = np.frombuffer(audio_data, dtype=np.int16)
+            # 1. Convert to int16 numpy array
+            audio_array_int16 = np.frombuffer(audio_data, dtype=np.int16)
             
             if from_rate == to_rate:
                 return audio_data
             
-            # Use scipy for ALL resampling - your fallback methods are causing quality issues
+            # 2. Explicitly convert to float32 for signal processing
+            # THIS IS THE FIX PROVEN BY YOUR DIAGNOSTIC SCRIPT
+            audio_array_float = audio_array_int16.astype(np.float32)
+
+            # Use scipy for ALL resampling
             from scipy import signal
             
-            # Use resample_poly for better quality
-            resampled = signal.resample_poly(audio_array, to_rate, from_rate)
+            # 3. Resample the float array
+            resampled_float = signal.resample_poly(audio_array_float, to_rate, from_rate)
             
-            # Proper clipping without distortion
-            resampled = np.clip(resampled, -32768, 32767).astype(np.int16)
+            # 4. Proper clipping and conversion back to int16
+            resampled_int16 = np.clip(resampled_float, -32768, 32767).astype(np.int16)
             
-            return resampled.tobytes()
+            return resampled_int16.tobytes()
             
         except Exception as e:
             logger.error(f"Resampling error: {e}")
@@ -511,14 +516,29 @@ class AudioBridge(pj.AudioMediaPort):
         
         try:
             if frame.size > 0:
+                audio_data = None
+                
+                # Method 1: Direct slice
                 try:
                     if hasattr(frame, 'buf') and frame.buf is not None:
                         audio_data = bytes(frame.buf[:frame.size])
-                    else:
-                        audio_data = bytes(frame.size)
-                except Exception as buffer_error:
-                    logger.error(f"❌ Buffer conversion error: {buffer_error}")
-                    audio_data = bytes(frame.size)
+                except:
+                    pass
+                
+                # Method 2: Element by element (for Linux)
+                if audio_data is None:
+                    try:
+                        audio_data = bytes([frame.buf[i] for i in range(frame.size)])
+                    except Exception as e:
+                        logger.error(f"❌ Failed to extract audio data: {e}")
+                        return
+                
+                # Now process the audio data if we successfully extracted it
+                if audio_data:
+                    # Log RMS for debugging (only occasionally to avoid performance issues)
+                    if self.config.DEBUG_AUDIO and self.stats['frames_captured'] % 50 == 0:
+                        rms = AudioAnalyzer.calculate_rms(audio_data)
+                        logger.info(f"🎤 Captured frame #{self.stats['frames_captured']}: RMS = {rms:.1f}, Size = {len(audio_data)} bytes")
                 
                 try:
                     self.capture_queue.put_nowait(audio_data)
@@ -785,6 +805,11 @@ class AICall(pj.Call):
                             asyncio.to_thread(self.audio_bridge.capture_queue.get_nowait),
                             timeout=0.01
                         )
+                        
+                        # Log RMS to verify audio capture
+                        if self.config.DEBUG_AUDIO and packet_count % 50 == 0:
+                            rms = AudioAnalyzer.calculate_rms(audio_data)
+                            logger.info(f"🎤 Bridging audio packet #{packet_count}: RMS = {rms:.1f}")
                         
                         # Send to AI agent
                         if self.ai_client:
