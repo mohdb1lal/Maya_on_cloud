@@ -1,0 +1,51 @@
+2025-10-25 12:46:36,015 - INFO - 🚀 Initializing RMS Monitor
+2025-10-25 12:46:36,078 - INFO - 📚 PJSUA2 Version: 2.15-dev
+2025-10-25 12:46:36,078 - INFO - ✅ SIP transport on port 5060
+2025-10-25 12:46:36,128 - INFO - ✅ Account created: 4qjpoz2h@pbx.voxbaysolutions.com
+2025-10-25 12:46:36,261 - INFO - ✅ Registration successful: OK
+2025-10-25 12:46:46,687 - INFO - 📞 Call object created (ID: 0)
+2025-10-25 12:46:46,688 - INFO - 📞 Incoming call from: "+917034146797" <sip:+917034146797@103.188.248.8>
+2025-10-25 12:46:46,688 - INFO - ✅ Call auto-answered
+2025-10-25 12:46:46,689 - INFO - 📞 Call State: INCOMING
+2025-10-25 12:46:46,691 - INFO - 📞 Call State: CONNECTING
+2025-10-25 12:46:46,784 - INFO - 📞 Call State: CONFIRMED
+2025-10-25 12:46:46,785 - INFO - ✅ Call CONNECTED - Starting RMS monitoring
+2025-10-25 12:46:53,597 - INFO - 🚀 Initializing RMS Monitor
+2025-10-25 12:46:53,647 - INFO - 📚 PJSUA2 Version: 2.15-dev
+2025-10-25 12:46:53,647 - INFO - ✅ SIP transport on port 5060
+2025-10-25 12:46:53,649 - INFO - ✅ Account created: 4qjpoz2h@pbx.voxbaysolutions.com
+2025-10-25 12:46:53,842 - INFO - ✅ Registration successful: OK
+2025-10-25 12:46:56,948 - INFO - 📞 Call object created (ID: 0)
+2025-10-25 12:46:56,949 - INFO - 📞 Incoming call from: "+917034146797" <sip:+917034146797@103.188.248.8>
+2025-10-25 12:46:56,949 - INFO - ✅ Call auto-answered
+2025-10-25 12:46:56,950 - INFO - 📞 Call State: INCOMING
+2025-10-25 12:46:56,951 - INFO - 📞 Call State: CONNECTING
+2025-10-25 12:46:57,041 - INFO - 📞 Call State: CONFIRMED
+2025-10-25 12:46:57,042 - INFO - ✅ Call CONNECTED - Starting RMS monitoring
+2025-10-25 12:49:19,778 - INFO - 🚀 Initializing RMS Monitor
+2025-10-25 12:49:19,836 - INFO - 📚 PJSUA2 Version: 2.15-dev
+2025-10-25 12:49:19,837 - INFO - ✅ SIP transport on port 5060
+2025-10-25 12:49:19,840 - INFO - ✅ Account created: 4qjpoz2h@pbx.voxbaysolutions.com
+2025-10-25 12:49:20,131 - INFO - ✅ Registration successful: OK
+2025-10-25 12:49:24,262 - INFO - 📞 Call object created (ID: 0)
+2025-10-25 12:49:24,263 - INFO - 📞 Incoming call from: "+917034146797" <sip:+917034146797@103.188.248.8>
+2025-10-25 12:49:24,263 - INFO - ✅ Call auto-answered
+2025-10-25 12:49:24,264 - INFO - 📞 Call State: INCOMING
+2025-10-25 12:49:24,265 - INFO - 📞 Call State: CONNECTING
+2025-10-25 12:49:24,364 - INFO - 📞 Call State: CONFIRMED
+2025-10-25 12:49:24,365 - INFO - ✅ Call CONNECTED - Starting RMS monitoring
+2025-10-25 12:49:24,366 - INFO - 🎧 Audio monitoring thread started
+2025-10-25 12:51:45,789 - INFO - 🚀 Initializing RMS Monitor
+2025-10-25 12:51:45,846 - INFO - 📚 PJSUA2 Version: 2.15-dev
+2025-10-25 12:51:45,847 - INFO - ✅ SIP transport on port 5060
+2025-10-25 12:51:45,847 - INFO - ✅ PJSUA2 library started
+2025-10-25 12:51:45,850 - INFO - ✅ Account created: 4qjpoz2h@pbx.voxbaysolutions.com
+2025-10-25 12:51:46,129 - INFO - ✅ Registration successful: OK
+2025-10-25 12:51:58,173 - INFO - 📞 Call object created (ID: 0)
+2025-10-25 12:51:58,174 - INFO - 📞 Incoming call from: "+918113086619" <sip:+918113086619@103.188.248.8>
+2025-10-25 12:51:58,174 - INFO - ✅ Call auto-answered
+2025-10-25 12:51:58,175 - INFO - 📞 Call State: INCOMING
+2025-10-25 12:51:58,177 - INFO - 📞 Call State: CONNECTING
+2025-10-25 12:51:58,361 - INFO - 📞 Call State: CONFIRMED
+2025-10-25 12:51:58,362 - INFO - ✅ Call CONNECTED - Starting audio level monitoring
+2025-10-25 12:51:58,363 - INFO - 🎧 Audio level monitoring thread started
