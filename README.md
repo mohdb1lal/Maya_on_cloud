@@ -10,6 +10,8 @@ cd work/zappq
 #### Connect to google instance shell
 ```
 gcloud compute ssh --zone "asia-south1-b" "maya-instance" --project "maya-zappq"
+. venv/bin/activate
+python bilal/app.py
 ```
 
 #### Venv for mac (pjsua-env)
@@ -43,3 +45,13 @@ cd /home/admin && . venv/bin/activate
 
 ### Details of files:
 firebase_data_fetching/doctors.py - access demo database in 'maya' firebase
+
+### RDP password
+```
+xo#sVD=f[x@liJ]
+``` 
+
+### Run app on Shahid's env
+```
+sudo /home/apple/shahid/voxbay/bin/python3 app.py
+```
