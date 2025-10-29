@@ -12,3 +12,7 @@ Wednesday(08-10-25)
 - time relativity ->  today, tomorrow
 - Don't mention todays data without user request
 - digit pronunction is in english(supposed to be in malayalam)
+
+
+Wednesday(29-10-25)
+- data and time context with respect to today
